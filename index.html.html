@@ -1,0 +1,995 @@
+<!doctype html><html lang="ru"><head><meta charset=utf8><title>Плата+ — реальная стоимость международного платежа</title><meta name="description" content="Калькулятор полной стоимости платежа через агента или банк: курс, надбавка, комиссии и деньги в пути — в рублях."><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+
+<style>
+/* Layout: Plata+ approved look — "plate" card with the overpay ring + comparison card on top, offer editor below. Light = Фарфор·кобальт, dark = Ночь·золотой ободок */
+:root{
+  --bg:#F4F1EA; --plate:#FFFFFF; --rim:#E6E1D6; --ink:#1B1D22; --muted:#6B6A64; --line:#D6CFC1;
+  --accent:#2445A8; --accent2:#8FA3D9; --fix:#C9C2B3; --time:#55575E; --soft:#EEF1FA; --on-accent:#FFFFFF;
+  --good:#1F7A4A; --bad:#A8432A; --shadow:rgba(27,29,34,.45);
+  --f-display:"Unbounded","Golos Text",system-ui,sans-serif;
+  --f-body:"Golos Text",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121418; --plate:#1C1F25; --rim:#2A2E36; --ink:#F1EEE6; --muted:#9A9DA6; --line:#30343D;
+  --accent:#D4B26A; --accent2:#7E6B42; --fix:#4A4F5A; --time:#A9ACB3; --soft:#26241E; --on-accent:#121418;
+  --good:#7FD39B; --bad:#F0947A; --shadow:rgba(0,0,0,.8); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121418; --plate:#1C1F25; --rim:#2A2E36; --ink:#F1EEE6; --muted:#9A9DA6; --line:#30343D;
+  --accent:#D4B26A; --accent2:#7E6B42; --fix:#4A4F5A; --time:#A9ACB3; --soft:#26241E; --on-accent:#121418;
+  --good:#7FD39B; --bad:#F0947A; --shadow:rgba(0,0,0,.8); color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;padding-inline:16px;padding-block:28px 56px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+.num{font-variant-numeric:tabular-nums}
+
+/* header */
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 20px}
+.brand{display:flex;align-items:center;gap:12px}
+.mark{width:36px;height:36px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;
+  background:conic-gradient(var(--accent) 0 22%,var(--accent2) 22% 34%,var(--rim) 34% 100%)}
+.mark::after{content:"";width:26px;height:26px;border-radius:50%;background:var(--plate)}
+.word{font-family:var(--f-display);font-weight:600;font-size:23px;letter-spacing:-.5px}
+.tagline{font-size:14px;color:var(--muted)}
+.chip{font-size:13px;font-weight:500;padding:6px 12px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+
+/* cards */
+.top{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:24px}
+.card{background:var(--plate);border:1px solid var(--line);border-radius:28px;padding:24px;display:flex;flex-direction:column;gap:20px;min-width:0}
+.card h2{font-family:var(--f-display);font-weight:600;font-size:19px;margin:0;letter-spacing:-.2px}
+.card-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.small{font-size:13px;color:var(--muted)}
+
+/* inputs */
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted);min-width:0}
+input,select{font:inherit;font-size:16px;font-weight:600;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:14px;height:48px;padding:0 14px;width:100%;min-width:0}
+input[type=number]{font-variant-numeric:tabular-nums}
+input:disabled{opacity:.5}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.check{flex-direction:row;align-items:center;gap:10px;font-size:14px;color:var(--ink);cursor:pointer}
+.check input{width:20px;height:20px;accent-color:var(--accent)}
+
+/* plate ring */
+.plate-wrap{display:flex;justify-content:center;padding-block:4px}
+.ring{width:min(300px,78vw);aspect-ratio:1;max-width:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 28px 44px -26px var(--shadow);background:var(--rim)}
+.ring-in{width:81%;aspect-ratio:1;border-radius:50%;background:var(--plate);box-shadow:inset 0 3px 12px rgba(0,0,0,.08);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;padding:12px}
+.ring-in .k{font-size:13px;color:var(--muted)}
+.ring-in .big{font-family:var(--f-display);font-weight:600;font-size:clamp(20px,5.5vw,27px);letter-spacing:-.5px}
+.ring-in .pct{font-size:15px;font-weight:600;color:var(--accent)}
+.legend{display:flex;justify-content:space-around;flex-wrap:wrap;gap:12px 16px}
+.lg{display:flex;flex-direction:column;align-items:center;gap:2px}
+.lg .t{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.dot{width:10px;height:10px;border-radius:50%}
+.lg .v{font-size:15px;font-weight:600}
+
+/* comparison rows */
+.cols,.opt{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,.8fr) minmax(0,1fr) minmax(0,1.3fr);gap:12px;align-items:center}
+.opt .days{font-size:14px}
+.opt .days b{font-weight:600}
+.mob{display:none}
+@media (max-width:480px){.mob{display:inline}}
+.cols{padding:0 16px;font-size:12px;color:var(--muted)}
+.cols span:last-child,.opt .tot{text-align:right}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{min-height:64px;padding:10px 16px;border-radius:16px;background:transparent;border:1px solid var(--line);color:var(--ink);text-align:left;cursor:pointer;font:inherit}
+.opt:hover{border-color:var(--accent)}
+.opt.on{background:var(--soft);border:2px solid var(--accent);padding:9px 15px}
+.opt .nm{font-weight:600;font-size:15px;overflow-wrap:anywhere}
+.opt .tag{font-size:12px;color:var(--muted)}
+.opt .tag.best{color:var(--accent);font-weight:600}
+.opt .eff{font-size:14px}
+.opt .tot{font-weight:600;font-size:15px}
+.save{font-size:14px;font-weight:600;color:var(--good)}
+.btns{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.btn{font:inherit;font-weight:600;font-size:15px;height:48px;padding:0 24px;border-radius:999px;cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--ink)}
+.btn:hover{border-color:var(--accent)}
+.btn.solid{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.solid:hover{filter:brightness(1.08)}
+.toast{font-size:14px;color:var(--good)}
+textarea{width:100%;min-height:140px;font:inherit;font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px}
+
+/* offer editor */
+.offers{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:16px}
+.offer{border:1px solid var(--line);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:14px;background:var(--bg);min-width:0}
+.offer input,.offer select{background:var(--plate);height:44px;font-size:15px}
+.offer .fields{grid-template-columns:repeat(2,minmax(0,1fr))}
+.offer-head{display:flex;gap:10px;align-items:center}
+.offer-head input{font-family:var(--f-display);font-size:16px;background:transparent;border-color:transparent;padding-left:4px}
+.offer-head input:hover{border-color:var(--line)}
+.del{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.del:hover{color:var(--bad);border-color:var(--bad)}
+.add{border:1.5px dashed var(--line);border-radius:20px;background:transparent;color:var(--accent);font:inherit;font-weight:600;font-size:15px;min-height:120px;cursor:pointer}
+.add:hover{border-color:var(--accent);background:var(--soft)}
+.linkbtn{background:none;border:none;padding:0;font:inherit;font-size:14px;color:var(--muted);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.hint{font-size:13px;color:var(--muted);margin:0;max-width:80ch}
+.hint:empty{display:none}
+.beta{font-family:var(--f-body);font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:2px 8px;vertical-align:5px}
+.consent{font-size:12.5px;color:var(--muted);margin:0;max-width:70ch}
+footer .legal{color:var(--ink);font-weight:500}
+/* inputs in a row always line up: labels grow upward, helper lines stay one line */
+.fields{align-items:end}
+.src{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:1.45em}
+.offer .fields>label:first-child{grid-column:1/-1}
+.fields.pay{align-items:end}
+/* Inputs in one row always line up: each label spans 3 shared rows (caption / field / note),
+   so a caption that wraps to two lines pushes the whole row, not just its own field */
+@supports (grid-template-rows: subgrid){
+  .fields{align-items:stretch}
+  .fields>label:not(.check){display:grid;grid-row:span 3;grid-template-rows:subgrid;row-gap:6px;align-items:end}
+  .fields>label:not(.check)>.src{align-self:start}
+  .fields>label.check{grid-row:span 3;align-self:end;min-height:48px}
+}
+.fields.pay label{white-space:nowrap}
+.rates{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:20px;background:var(--bg)}
+.rates input{background:var(--plate)}
+.rates-title{font-size:13px;font-weight:600;color:var(--ink)}
+.src{font-size:12px;color:var(--muted)}
+input[readonly]{background:transparent;border-style:dashed;cursor:default}
+input[readonly]:focus-visible{outline:none}
+.src.auto{color:var(--accent);font-weight:600}
+.src.auto::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor;margin-right:6px;vertical-align:1px}
+footer{display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--muted);max-width:80ch}
+@media (max-width:480px){
+  .card{padding:18px;border-radius:22px}
+  .cols{display:none}
+  .opt{grid-template-columns:minmax(0,1fr) auto;row-gap:2px}
+  .opt .days{grid-column:1;grid-row:2;font-size:12px;color:var(--muted)}
+  .opt .eff{grid-column:1;grid-row:3;font-size:12px;color:var(--muted)}
+  .opt .tot{grid-column:2;grid-row:1/4}
+}
+@media (prefers-reduced-motion:no-preference){.ring{transition:background .3s}}
+/* tabs */
+.tabs{display:flex;gap:6px;padding:4px;border-radius:999px;border:1px solid var(--line);background:var(--plate)}
+.tab{font:inherit;font-size:15px;font-weight:600;border:0;background:transparent;color:var(--muted);border-radius:999px;padding:8px 16px;cursor:pointer;display:flex;align-items:center;gap:8px}
+.tab:hover{color:var(--ink)}
+.seg{display:flex;padding:4px;border-radius:16px;background:var(--bg);border:1px solid var(--line);gap:4px}
+.seg button{flex:1;font:inherit;font-size:14px;font-weight:600;border:0;border-radius:12px;padding:10px 8px;background:transparent;color:var(--muted);cursor:pointer;min-height:44px}
+.seg button[aria-pressed="true"]{background:var(--plate);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.seg button:hover{color:var(--ink)}
+.opt .tot small{display:block;font-size:12px;font-weight:400;color:var(--muted)}
+.tab[aria-selected="true"]{background:var(--accent);color:var(--on-accent)}
+.count{font-size:12px;min-width:20px;padding:1px 6px;border-radius:999px;background:var(--soft);color:var(--accent);text-align:center}
+.tab[aria-selected="true"] .count{background:var(--on-accent);color:var(--accent)}
+.view{display:flex;flex-direction:column;gap:24px}
+header>*{min-width:0;max-width:100%}
+.tabs{overflow-x:auto;max-width:100%;min-width:0;scrollbar-width:none}
+.tab{white-space:nowrap;flex:none}
+.calc-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:860px){.calc-grid{grid-template-columns:minmax(0,1fr)}}
+.calc-grid .col{display:flex;flex-direction:column;gap:18px;min-width:0}
+.ring-col{align-items:stretch;position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px)}
+.ring-col .btn{align-self:center}
+/* offers carousel */
+.offers{display:flex!important;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-inline:2px;padding:2px 2px 10px;overscroll-behavior-x:contain}
+.offers>.offer,.offers>.add{flex:0 0 min(340px,86%);scroll-snap-align:start}
+.offers:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:20px}
+.car-nav{display:flex;align-items:center;gap:8px}
+.arrow{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--plate);color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.arrow:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.arrow:disabled{opacity:.35;cursor:default}
+@media (prefers-reduced-motion:no-preference){.offers{scroll-behavior:smooth}}
+/* converter */
+.conv-in{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) auto minmax(0,1fr);gap:12px;align-items:end}
+@media (max-width:560px){.conv-in{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)}.conv-in .amt{grid-column:1/-1}}
+.swap{width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:var(--plate);color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.swap:hover{border-color:var(--accent);color:var(--accent)}
+.cv-rates{display:flex;flex-direction:column;gap:14px}
+.cv-rates .fields{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+.cv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:14px}
+.cv-card{border:1px solid var(--line);border-radius:20px;padding:16px 18px;display:flex;flex-direction:column;gap:6px;background:var(--plate);min-width:0}
+.cv-card.base{border:2px solid var(--accent);padding:15px 17px;background:var(--soft)}
+.cv-src{font-size:13px;font-weight:600;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.cv-src .pill{font-size:11px;color:var(--accent)}
+.cv-val{font-family:var(--f-display);font-weight:600;font-size:clamp(19px,4vw,23px);letter-spacing:-.4px;overflow-wrap:anywhere}
+.cv-rate{font-size:13px;color:var(--muted)}
+.cv-diff{font-size:13px;font-weight:600}
+.cv-diff.up{color:var(--bad)}.cv-diff.down{color:var(--good)}
+.cv-empty{font-size:14px;color:var(--muted)}
+/* save row */
+.saverow{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.saverow label{flex:1 1 220px}
+/* history */
+.hist{display:flex;flex-direction:column;gap:12px}
+.h-item{border:1px solid var(--line);border-radius:20px;padding:16px 18px;display:flex;flex-direction:column;gap:10px;background:var(--plate)}
+.h-top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 16px;align-items:baseline}
+.h-when{font-size:13px;color:var(--muted)}
+.h-title{font-family:var(--f-display);font-weight:600;font-size:17px;overflow-wrap:anywhere}
+.h-note{font-size:14px;color:var(--muted);overflow-wrap:anywhere}
+.h-best{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px}
+.h-best b{font-weight:600}
+.h-best .acc{color:var(--accent);font-weight:600}
+.h-rows{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.h-rows td,.h-rows th{padding:6px 8px 6px 0;border-bottom:1px dashed var(--line);text-align:left;font-weight:400;white-space:nowrap}
+.h-rows th{color:var(--muted);font-size:12px}
+.h-rows td:last-child,.h-rows th:last-child{text-align:right;padding-right:0}
+.h-actions{display:flex;flex-wrap:wrap;gap:10px}
+.btn.sm{height:40px;padding:0 18px;font-size:14px}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.empty{text-align:center;padding:40px 16px;color:var(--muted);display:flex;flex-direction:column;gap:8px;align-items:center}
+.empty b{color:var(--ink);font-size:16px}
+.tblwrap{overflow-x:auto}
+/* feedback */
+.fb{display:flex;flex-direction:column;gap:22px;max-width:760px}
+.q{display:flex;flex-direction:column;gap:10px;border:0;padding:0;margin:0;min-width:0}
+.q legend{font-weight:600;font-size:15px;padding:0;margin-bottom:10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips label{flex-direction:row}
+.chips input{position:absolute;opacity:0;width:1px;height:1px}
+.chips span{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:var(--plate);color:var(--ink);font-size:14px;font-weight:500;cursor:pointer}
+.chips input:checked+span{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.chips input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.stars span{min-width:48px;justify-content:center;font-family:var(--f-display);font-size:16px}
+.fb textarea{min-height:90px;font-size:15px;resize:vertical}
+.fb-done{padding:14px 16px;border-radius:16px;background:var(--soft);color:var(--ink);font-size:14px}
+.fb-admin{display:flex;flex-direction:column;gap:14px;border-top:1px solid var(--line);padding-top:22px}
+.fb-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:12px}
+.fb-stat{border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+.fb-stat b{font-family:var(--f-display);font-size:22px;color:var(--ink);font-weight:600}
+.fb-stat .bars{display:flex;flex-direction:column;gap:3px}
+.fb-item{border:1px solid var(--line);border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.fb-item .who{font-weight:600}
+.fb-item dl{display:grid;grid-template-columns:minmax(0,max-content) minmax(0,1fr);gap:4px 12px;margin:0}
+.fb-item dt{color:var(--muted)}
+.fb-item dd{margin:0;overflow-wrap:anywhere}
+details summary{cursor:pointer;font-size:14px;font-weight:600;color:var(--accent)}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="mark" aria-hidden="true"></div>
+      <div>
+        <div class="word">plata+ <span class="beta">бета</span></div>
+        <div class="tagline">Реальная цена международного платежа · для бизнеса</div>
+      </div>
+    </div>
+    <div class="row" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+      <span class="chip" id="exampleChip">Пример с условными цифрами</span>
+      <nav class="tabs" role="tablist" aria-label="Разделы">
+        <button class="tab" role="tab" id="tabCalc" aria-selected="true" aria-controls="viewCalc" type="button">Расчёт</button>
+        <button class="tab" role="tab" id="tabOffers" aria-selected="false" aria-controls="viewOffers" type="button">Предложения <span class="count num" id="offCount">0</span></button>
+        <button class="tab" role="tab" id="tabCmp" aria-selected="false" aria-controls="viewCmp" type="button">Сравнение</button>
+        <button class="tab" role="tab" id="tabConv" aria-selected="false" aria-controls="viewConv" type="button">Конвертер</button>
+        <button class="tab" role="tab" id="tabHist" aria-selected="false" aria-controls="viewHist" type="button">История <span class="count num" id="histCount">0</span></button>
+        <button class="tab" role="tab" id="tabFb" aria-selected="false" aria-controls="viewFb" type="button">Отзыв <span class="count num" id="fbCount" hidden>0</span></button>
+      </nav>
+    </div>
+  </header>
+
+  <div class="view" id="viewCalc" role="tabpanel" aria-labelledby="tabCalc">
+  <section class="card" aria-labelledby="h-pay">
+    <div class="calc-grid">
+      <div class="col">
+      <h2 id="h-pay">Платёж</h2>
+      <div class="seg" role="group" aria-label="Что известно">
+        <button type="button" id="modeCur" aria-pressed="true">Знаю сумму в валюте</button>
+        <button type="button" id="modeRub" aria-pressed="false">Знаю сумму в рублях</button>
+      </div>
+      <div class="fields pay">
+        <label for="amount" id="amountLbl">Сумма, <span class="curName">USD</span><input id="amount" type="number" min="0" step="any" inputmode="decimal"></label>
+        <label for="budget" id="budgetLbl" hidden>Бюджет, ₽<input id="budget" type="number" min="0" step="any" inputmode="decimal"></label>
+        <label for="cur">Валюта
+          <select id="cur"><option>USD</option><option>EUR</option><option>CNY</option><option>AED</option><option>HKD</option><option>TRY</option><option>KZT</option><option>INR</option></select>
+        </label>
+      </div>
+      <div class="rates">
+        <div class="rates-head">
+          <span class="rates-title">Базовые курсы, ₽ за 1 <span class="curName">USD</span></span>
+        </div>
+        <div class="fields">
+          <label for="cb">ЦБ РФ<input id="cb" type="number" min="0" step="0.0001" inputmode="decimal">
+            <span class="src" id="cbSrc">Ручной ввод</span>
+          </label>
+          <label for="ex">Биржа / рынок<input id="ex" type="number" min="0" step="0.0001" inputmode="decimal">
+            <span class="src">Ручной ввод</span>
+          </label>
+          <label for="inv">Investing<input id="inv" type="number" min="0" step="0.0001" inputmode="decimal">
+            <span class="src">Ручной ввод</span>
+          </label>
+          <label for="xe">XE<input id="xe" type="number" min="0" step="0.0001" inputmode="decimal">
+            <span class="src">Ручной ввод</span>
+          </label>
+        </div>
+        <p class="hint" id="exHint"></p>
+      </div>
+      <div class="fields">
+        <label class="check" for="useTime"><input id="useTime" type="checkbox"> Учитывать деньги в пути</label>
+        <label for="rate">Ставка, % годовых<input id="rate" type="number" min="0" step="0.1" inputmode="decimal"></label>
+      </div>
+      <p class="hint">Пока платёж идёт, рубли уже списаны и не работают. Стоимость считается как сумма × ставка × дни / 365.</p>
+      </div>
+      <div class="col ring-col">
+      <div class="plate-wrap">
+        <div class="ring" id="ring">
+          <div class="ring-in" aria-live="polite">
+            <div class="k" id="rName">—</div>
+            <div class="big num" id="rOver">—</div>
+            <div class="pct num" id="rPct"></div>
+            <div class="k num" id="rTotal"></div>
+          </div>
+        </div>
+      </div>
+      <div class="legend" id="legend"></div>
+        <button class="btn solid" type="button" data-go="cmp">Все варианты в сравнении</button>
+      </div>
+    </div>
+  </section>
+  </div>
+
+  <section class="view card" id="viewOffers" role="tabpanel" aria-labelledby="tabOffers" hidden>
+    <div class="card-head">
+      <h2 id="h-off">Предложения агентов и банков</h2>
+      <div class="car-nav">
+        <span class="small num" id="carPos"></span>
+        <button class="arrow" id="carPrev" type="button" aria-label="Предыдущее предложение"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4L6 9l5 5"/></svg></button>
+        <button class="arrow" id="carNext" type="button" aria-label="Следующее предложение"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4l5 5-5 5"/></svg></button>
+      </div>
+    </div>
+    <div class="offers" id="offers" tabindex="0" aria-label="Предложения, листайте вправо и влево"></div>
+    <div class="btns" style="justify-content:space-between">
+      <button class="btn" type="button" data-go="cmp">Сравнить предложения</button>
+      <button class="linkbtn" id="reset" type="button">Начать с чистого листа</button>
+    </div>
+    <p class="hint">Базовый курс: ЦБ, биржа или рынок, Investing, XE или курс, который назвал агент. Надбавка прибавляется к курсу, комиссия агента считается от тела платежа, фиксированные сборы (например, SWIFT) добавляются сверху и комиссией не облагаются.</p>
+  </section>
+
+  <section class="view card" id="viewCmp" role="tabpanel" aria-labelledby="tabCmp" hidden>
+      <div class="card-head">
+        <h2 id="h-cmp">Сравнение</h2>
+        <span class="small num" id="cbNote"></span>
+      </div>
+      <div class="cols"><span>Агент / банк</span><span>Трансфер</span><span>₽ за 1 <span id="curLbl">USD</span></span><span id="totLbl">Итого</span></div>
+      <div class="opts" id="opts"></div>
+      <div class="save" id="save"></div>
+      <div class="saverow">
+        <label for="note">Комментарий к расчёту<input id="note" type="text" maxlength="120" placeholder="Например, поставщик или номер инвойса"></label>
+        <button class="btn solid" id="saveBtn" type="button">Сохранить расчёт</button>
+      </div>
+      <div class="btns">
+        <button class="btn" id="copy" type="button">Скопировать итог</button>
+        <span class="toast" id="toast" hidden></span>
+      </div>
+      <textarea id="copyFallback" hidden readonly aria-label="Текст итога"></textarea>
+  </section>
+
+  <section class="view card" id="viewConv" role="tabpanel" aria-labelledby="tabConv" hidden>
+    <div class="card-head">
+      <h2>Конвертер</h2>
+      <span class="small">Одна сумма по курсам разных источников</span>
+    </div>
+    <div class="conv-in">
+      <label for="cvAmt" class="amt">Сумма<input id="cvAmt" type="number" min="0" step="any" inputmode="decimal"></label>
+      <label for="cvFrom">Из<select id="cvFrom"><option>RUB</option><option>USD</option><option>EUR</option><option>CNY</option><option>AED</option><option>HKD</option><option>TRY</option><option>KZT</option><option>INR</option></select></label>
+      <button class="swap" id="cvSwap" type="button" aria-label="Поменять валюты местами">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h11l-3-3M15 12H4l3 3"/></svg>
+      </button>
+      <label for="cvTo">В<select id="cvTo"><option>RUB</option><option>USD</option><option>EUR</option><option>CNY</option><option>AED</option><option>HKD</option><option>TRY</option><option>KZT</option><option>INR</option></select></label>
+    </div>
+    <div class="cv-grid" id="cvOut" aria-live="polite"></div>
+    <div class="rates cv-rates" id="cvRates"></div>
+    <div class="btns">
+      <button class="btn" id="cvCopy" type="button">Скопировать результат</button>
+      <span class="toast" id="cvToast" hidden></span>
+    </div>
+    <p class="hint">Курс ЦБ подгружается автоматически. Курсы биржи, Investing и XE общие с вкладкой «Расчёт»: меняете в одном месте, и они меняются в другом. Запоминаются отдельно для каждой валюты. Для пары без рубля, например USD → CNY, курс считается через рубль по каждому источнику.</p>
+  </section>
+
+  <section class="view card" id="viewFb" role="tabpanel" aria-labelledby="tabFb" hidden>
+    <div class="card-head">
+      <h2>Отзыв о plata+</h2>
+      <span class="small">Займёт пару минут. Ваш отзыв видит только автор приложения</span>
+    </div>
+    <form class="fb" id="fbForm" novalidate>
+      <fieldset class="q"><legend>Насколько калькулятор полезен для вашей работы?</legend><div class="chips stars"><label><input type="radio" name="rating" value="1"><span>1</span></label><label><input type="radio" name="rating" value="2"><span>2</span></label><label><input type="radio" name="rating" value="3"><span>3</span></label><label><input type="radio" name="rating" value="4"><span>4</span></label><label><input type="radio" name="rating" value="5"><span>5</span></label></div><span class="small">1 — бесполезен, 5 — очень полезен</span></fieldset>
+      <fieldset class="q"><legend>Совпал ли итог с тем, что вы реально заплатили?</legend><div class="chips"><label><input type="radio" name="match" value="Да, точно"><span>Да, точно</span></label><label><input type="radio" name="match" value="Почти"><span>Почти</span></label><label><input type="radio" name="match" value="Нет"><span>Нет</span></label><label><input type="radio" name="match" value="Не проверял(а)"><span>Не проверял(а)</span></label></div></fieldset>
+      <fieldset class="q"><legend>Нашёлся ли вариант дешевле того, что вы выбрали?</legend><div class="chips"><label><input type="radio" name="cheaper" value="Да"><span>Да</span></label><label><input type="radio" name="cheaper" value="Нет"><span>Нет</span></label><label><input type="radio" name="cheaper" value="Не знаю"><span>Не знаю</span></label></div></fieldset>
+      <fieldset class="q"><legend>Как часто вы бы пользовались?</legend><div class="chips"><label><input type="radio" name="freq" value="При каждом платеже"><span>При каждом платеже</span></label><label><input type="radio" name="freq" value="Раз в неделю"><span>Раз в неделю</span></label><label><input type="radio" name="freq" value="Иногда"><span>Иногда</span></label><label><input type="radio" name="freq" value="Не стал(а) бы"><span>Не стал(а) бы</span></label></div></fieldset>
+      <fieldset class="q"><legend>Сколько готовы платить в месяц?</legend><div class="chips"><label><input type="radio" name="price" value="Только бесплатно"><span>Только бесплатно</span></label><label><input type="radio" name="price" value="До 500 ₽"><span>До 500 ₽</span></label><label><input type="radio" name="price" value="500–1 500 ₽"><span>500–1 500 ₽</span></label><label><input type="radio" name="price" value="Больше 1 500 ₽"><span>Больше 1 500 ₽</span></label></div></fieldset>
+      <label for="fbUnclear">Что было непонятно или неудобно?<textarea id="fbUnclear" maxlength="1500"></textarea></label>
+      <label for="fbMissing">Чего не хватает?<textarea id="fbMissing" maxlength="1500"></textarea></label>
+      <label for="fbContact">Имя или контакт для связи (необязательно)<input id="fbContact" type="text" maxlength="120"></label>
+      <div class="btns">
+        <button class="btn solid" id="fbSend" type="submit">Отправить отзыв</button>
+        <button class="btn" id="fbCopy" type="button" hidden>Скопировать отзыв</button>
+        <span class="toast" id="fbToast" hidden></span>
+      </div>
+      <p class="consent">Отправляя отзыв, вы соглашаетесь, что автор plata+ использует ваши ответы и указанный контакт только для улучшения продукта и связи с вами по поводу теста. Контакт указывать не обязательно.</p>
+      <div class="fb-done" id="fbNote" hidden></div>
+    </form>
+    <div class="fb-admin" id="fbAdmin" hidden>
+      <div class="card-head"><h2>Отзывы тестировщиков</h2><span class="small" id="fbAdminNote">Видно только вам</span></div>
+      <div class="fb-stats" id="fbStats"></div>
+      <div class="hist" id="fbList"></div>
+    </div>
+  </section>
+
+  <section class="view card" id="viewHist" role="tabpanel" aria-labelledby="tabHist" hidden>
+    <div class="card-head">
+      <h2>История расчётов</h2>
+      <span class="small" id="histWhere"></span>
+    </div>
+    <div class="hist" id="hist"></div>
+  </section>
+
+  <footer>
+    <span class="legal">© 2026 plata+. Все права защищены. Бета-версия для закрытого тестирования, не для распространения.</span>
+    <span>Расчёты носят справочный характер и не являются финансовой рекомендацией. plata+ не проводит платежи и не рекомендует агентов или схемы. Окончательные условия уточняйте у агента или банка.</span>
+    <span>Курс ЦБ подгружается автоматически из официальных данных Банка России каждый рабочий день. Курсы биржи, Investing и XE вводятся вручную. Текущий расчёт хранится в этом браузере, сохранённые расчёты — в вашей истории.</span>
+  </footer>
+</div>
+
+<!-- CBR-DATA: updated automatically every weekday; keep this block on one line -->
+<script type="application/json" id="cbrData">{"source":"Банк России (cbr-xml-daily.ru)","date":"2026-10-03T11:30:00+03:00","updatedAt":"2026-10-03T10:20:00+03:00","rates":{"USD":83.4839,"EUR":94.3201,"CNY":12.4328,"AED":22.7322,"HKD":10.6376,"TRY":1.70408,"KZT":0.188916,"INR":0.86969}}</script>
+<script>
+(function(){
+const KEY='tsena-platezha-v1';
+const EXAMPLE={
+  mode:'cur',amount:20000,budget:1650000,cur:'USD',cb:82.00,cbAuto:true,ex:82.90,inv:83.05,xe:83.15,useTime:true,rate:16,
+  offers:[
+    {name:'Агент А',base:'cb',own:0,markup:2,feePct:0,vat:false,fixCur:0,fixRub:0,days:3},
+    {name:'Агент Б',base:'ex',own:0,markup:1.2,feePct:0,vat:false,fixCur:50,fixRub:0,days:5},
+    {name:'Банк, SWIFT',base:'own',own:85.40,markup:0,feePct:0.3,vat:true,fixCur:0,fixRub:1500,days:4},
+    {name:'Агент В',base:'inv',own:0,markup:0.5,feePct:1,vat:true,fixCur:0,fixRub:0,days:10}
+  ]};
+let state,isExample=true,picked=null,lastRows=[],cbr=null;
+
+function load(){
+  try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.offers){isExample=!!s.isExample;
+    s.cbAuto=true; if(!s.mode)s.mode='cur'; if(s.budget===undefined)s.budget=''; if(s.inv===undefined)s.inv=''; if(s.xe===undefined)s.xe='';
+    return s;}}catch(e){}
+  return JSON.parse(JSON.stringify(EXAMPLE));
+}
+const fmtDate=iso=>{try{return new Date(iso).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'Europe/Moscow'})}catch(e){return ''}};
+function applyCbr(){
+  // put the official CBR rate into the field when auto mode is on and a rate exists for this currency
+  const v=cbr&&cbr.rates&&cbr.rates[state.cur];
+  state.cbAuto=true;
+  const f=$('cb');
+  if(v){state.cb=v;f.value=v;f.readOnly=true;f.title='Официальный курс Банка России, изменить нельзя';}
+  else{f.readOnly=false;f.title='';}
+  const src=$('cbSrc');
+  if(v){src.textContent=`Авто · ЦБ на ${fmtDate(cbr.date)}`;src.className='src auto';}
+  else {src.textContent=cbr?'Нет курса ЦБ для этой валюты':'Ручной ввод';src.className='src';}
+  document.querySelectorAll('.curName').forEach(e=>e.textContent=state.cur);
+  $('exHint').textContent=(state.cur==='USD'||state.cur==='EUR')
+    ?'Доллар и евро не торгуются на Московской бирже с июня 2024 года, поэтому в поле «Биржа / рынок» укажите внебиржевой курс, от которого считает агент.'
+    :'Для юаня и других валют, которые торгуются на Московской бирже, укажите биржевой курс TOD.';
+}
+async function connectRates(){
+  // курсы ЦБ прямо из браузера (зеркало официальных данных Банка России)
+  const pull=async()=>{
+    try{
+      const r=await fetch('https://www.cbr-xml-daily.ru/daily_json.js',{cache:'no-store'}); if(!r.ok) return;
+      const j=await r.json(); const rates={};
+      Object.entries(j.Valute||{}).forEach(([c,v])=>{if(v&&v.Nominal>0&&v.Value>0)rates[c]=+(v.Value/v.Nominal).toFixed(6);});
+      if(!j.Date||!Object.keys(rates).length) return;
+      const d={source:'Банк России (cbr-xml-daily.ru)',date:j.Date,updatedAt:new Date().toISOString(),rates};
+      if(cbr&&cbr.date&&new Date(d.date)<new Date(cbr.date)) return;
+      cbr=d; applyCbr(); renderResult(); renderConv();
+    }catch(e){}
+  };
+  pull(); setInterval(pull,60*60*1000);
+}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(Object.assign({},state,{isExample})))}catch(e){}}
+
+const $=id=>document.getElementById(id);
+const num=v=>{const n=parseFloat(String(v).replace(',','.'));return isFinite(n)?n:0};
+const rub=n=>new Intl.NumberFormat('ru-RU',{maximumFractionDigits:0}).format(Math.round(n))+' ₽';
+const r4=n=>new Intl.NumberFormat('ru-RU',{minimumFractionDigits:4,maximumFractionDigits:4}).format(n);
+const r2=n=>new Intl.NumberFormat('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
+const dayTxt=d=>{d=Math.round(num(d));const m10=d%10,m100=d%100;
+  const w=(m10===1&&m100!==11)?'день':(m10>=2&&m10<=4&&(m100<12||m100>14))?'дня':'дней';return d+' '+w;};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function rateOf(o){
+  const cb=num(state.cb);
+  const base=o.base==='own'?num(o.own):o.base==='cb'?cb:num(state[o.base]);
+  return base*(1+num(o.markup)/100);
+}
+// Reverse mode: how much currency the supplier receives for a rouble budget R.
+// total(A) = (A·rate·(1+fee%·(1+vat)) + fixCur·rate + fixRub)·(1+time), solved for A.
+function solveAmount(o,R){
+  const rate=rateOf(o); if(!(rate>0)||!(R>0)) return 0;
+  const f=num(o.feePct)/100, v=o.vat?0.2:0;
+  const t=state.useTime?num(state.rate)/100*num(o.days)/365:0;
+  const A=((R/(1+t)-num(o.fixRub)-num(o.fixCur)*rate)/(1+f*(1+v)))/rate;
+  return A>0?A:0;
+}
+function calc(o,Ain){
+  const A=Ain===undefined?num(state.amount):Ain, cb=num(state.cb);
+  const rate=rateOf(o);
+  const principal=A*rate;
+  const fixCurRub=num(o.fixCur)*rate;
+  const fee=principal*num(o.feePct)/100; // % commission is charged on the payment body only, not on fixed fees
+  const vat=o.vat?fee*0.2:0;
+  const fixRub=num(o.fixRub);
+  const sub=principal+fixCurRub+fee+vat+fixRub;
+  const time=state.useTime?sub*num(state.rate)/100*num(o.days)/365:0;
+  const total=sub+time;
+  const spread=A*(rate-cb);
+  return {rate,principal,fixCurRub,fee,vat,fixRub,time,total,spread,
+    comm:fee+vat, fixed:fixCurRub+fixRub,
+    A, over:total-A*cb, eff:A?total/A:0, pct:cb&&A?(total/(A*cb)-1)*100:0};
+}
+
+const BASES=[['cb','ЦБ РФ'],['ex','Биржа / рынок'],['inv','Investing'],['xe','XE'],['own','Свой курс']];
+function offerHTML(o,i){
+  const sel=BASES.map(([v,t])=>`<option value="${v}"${o.base===v?' selected':''}>${t}</option>`).join('');
+  return `<div class="offer" data-i="${i}">
+    <div class="offer-head">
+      <input id="o${i}-name" data-k="name" value="${esc(o.name)}" aria-label="Название предложения">
+      <button class="del" type="button" data-del="${i}" aria-label="Удалить предложение">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+      </button>
+    </div>
+    <div class="fields">
+      <label for="o${i}-base">Базовый курс<select id="o${i}-base" data-k="base">${sel}</select></label>
+      <label for="o${i}-own" data-own${o.base==='own'?'':' hidden'}>Курс агента, ₽<input id="o${i}-own" data-k="own" type="number" step="0.0001" value="${o.own}"></label>
+      <label for="o${i}-markup">Надбавка к курсу, %<input id="o${i}-markup" data-k="markup" type="number" step="0.01" value="${o.markup}"></label>
+      <label for="o${i}-feePct">Комиссия, %<input id="o${i}-feePct" data-k="feePct" type="number" step="0.01" value="${o.feePct}"></label>
+      <label for="o${i}-fixCur">Фикс, ${state.cur}<input id="o${i}-fixCur" data-k="fixCur" type="number" step="any" value="${o.fixCur}"></label>
+      <label for="o${i}-fixRub">Фикс, ₽<input id="o${i}-fixRub" data-k="fixRub" type="number" step="any" value="${o.fixRub}"></label>
+      <label for="o${i}-days">Трансфер, дней<input id="o${i}-days" data-k="days" type="number" step="1" min="0" value="${o.days}"></label>
+    </div>
+    <label class="check" for="o${i}-vat"><input id="o${i}-vat" data-k="vat" type="checkbox"${o.vat?' checked':''}> НДС 20% на комиссию</label>
+  </div>`;
+}
+function renderOffers(){
+  $('offers').innerHTML=state.offers.map(offerHTML).join('')+
+    '<button class="add" id="add" type="button">+ Добавить предложение</button>';
+  if(typeof updCar==='function') try{updCar()}catch(e){}
+}
+
+function renderResult(){
+  const cb=num(state.cb);
+  $('exampleChip').hidden=!isExample;
+  $('curLbl').textContent=state.cur;
+  $('cbNote').textContent=cb?`Курс ЦБ ${r2(cb)} ₽`:'';
+  const rubMode=state.mode==='rub', R=num(state.budget);
+  const fmtCur=n=>new Intl.NumberFormat('ru-RU',{maximumFractionDigits:2}).format(n)+' '+state.cur;
+  $('totLbl').textContent=rubMode?'Получит поставщик':'Итого';
+  const rows=state.offers.map((o,i)=>Object.assign({o,i},calc(o,rubMode?solveAmount(o,R):undefined)))
+    .filter(r=>r.total>0&&r.A>0)
+    .sort(rubMode?(a,b)=>b.A-a.A:(a,b)=>a.total-b.total);
+  lastRows=rows;
+  if(!rows.length){
+    $('rName').textContent='Нет данных';$('rOver').textContent='—';$('rPct').textContent='';$('rTotal').textContent='Укажите сумму, курсы и предложения';
+    $('ring').style.background='var(--rim)';$('legend').innerHTML='';$('opts').innerHTML='';$('save').textContent='';return;
+  }
+  const best=rows[0], worst=rows[rows.length-1];
+  let s=rows.find(r=>r.i===picked)||best;
+
+  // ring: shares of the overpay
+  const parts=[['Спред курса',s.spread,'var(--accent)'],['Комиссия',s.comm,'var(--accent2)'],['Фикс. сборы',s.fixed,'var(--fix)']];
+  if(state.useTime) parts.push(['Деньги в пути',s.time,'var(--time)']);
+  const pos=parts.reduce((a,p)=>a+Math.max(0,p[1]),0);
+  if(pos>0){
+    let acc=0;const stops=parts.map(p=>{const a=acc;acc+=Math.max(0,p[1])/pos*100;return `${p[2]} ${a}% ${acc}%`});
+    $('ring').style.background=`conic-gradient(${stops.join(',')})`;
+  } else $('ring').style.background='var(--rim)';
+  $('rName').textContent=`${s.o.name} · переплата к ЦБ`;
+  $('rOver').textContent=(s.over<0?'−':'')+rub(Math.abs(s.over));
+  $('rPct').textContent=cb?`${s.pct>=0?'+':'−'}${r2(Math.abs(s.pct))} %`:'';
+  $('rTotal').textContent=rubMode?`поставщик получит ${fmtCur(s.A)}`:`итого ${rub(s.total)}`;
+  $('legend').innerHTML=parts.map(p=>`<div class="lg"><div class="t"><span class="dot" style="background:${p[2]}"></span>${p[0]}</div><div class="v num">${rub(p[1])}</div></div>`).join('');
+
+  const minDays=Math.min(...rows.map(r=>num(r.o.days)));
+  $('opts').innerHTML=rows.map(r=>{
+    const isBest=r===best;
+    return `<button type="button" class="opt${r===s?' on':''}" data-pick="${r.i}" aria-pressed="${r===s}">
+      <span><span class="nm">${esc(r.o.name)}</span><br><span class="tag${isBest?' best':''} num">${isBest?'Выгоднее всего':rubMode?'−'+fmtCur(best.A-r.A):'+'+rub(r.total-best.total)}</span></span>
+      <span class="days num"><b>${dayTxt(r.o.days)}</b>${r.o.days==minDays&&rows.length>1?' · быстрее всех':''}</span>
+      <span class="eff num">${r4(r.eff)}<span class="mob"> ₽/${state.cur}</span></span>
+      <span class="tot num">${rubMode?fmtCur(r.A)+'<small>за '+rub(r.total)+'</small>':rub(r.total)}</span>
+    </button>`}).join('');
+  $('save').textContent=rows.length<2?'':rubMode
+    ?`Лучший вариант даёт на ${fmtCur(best.A-worst.A)} больше, чем худший`
+    :`Экономия против самого дорогого: ${rub(worst.total-best.total)}`;
+}
+
+function summaryText(){
+  const A=num(state.amount), rubMode=state.mode==='rub';
+  const fc=n=>new Intl.NumberFormat('ru-RU',{maximumFractionDigits:2}).format(n)+' '+state.cur;
+  const lines=[`Plata+ · ${rubMode?'бюджет '+rub(num(state.budget))+' → '+state.cur:'платёж '+new Intl.NumberFormat('ru-RU').format(A)+' '+state.cur}, ЦБ ${r4(num(state.cb))}${cbr&&state.cbAuto?' (на '+fmtDate(cbr.date)+')':''}`+
+    [['ex','биржа/рынок'],['inv','Investing'],['xe','XE']].filter(([k])=>num(state[k])).map(([k,t])=>`, ${t} ${r4(num(state[k]))}`).join('')];
+  lastRows.forEach((r,k)=>lines.push(rubMode
+    ?`${k+1}. ${r.o.name}: получит ${fc(r.A)} (${r4(r.eff)} ₽/${state.cur}, трансфер ${dayTxt(r.o.days)})${k?', −'+fc(lastRows[0].A-r.A):' — выгоднее всего'}`
+    :`${k+1}. ${r.o.name}: ${rub(r.total)} (${r4(r.eff)} ₽/${state.cur}, трансфер ${dayTxt(r.o.days)})${k?', +'+rub(r.total-lastRows[0].total):' — выгоднее всего'}`));
+  if(state.useTime) lines.push(`С учётом денег в пути (${r2(num(state.rate))} % годовых)`);
+  return lines.join('\n');
+}
+
+function syncTop(){
+  ['amount','budget','cb','ex','inv','xe'].forEach(k=>$(k).value=state[k]??'');$('cur').value=state.cur;
+  setModeUI();
+  $('useTime').checked=!!state.useTime;$('rate').value=state.rate;$('rate').disabled=!state.useTime;
+  applyCbr();
+}
+function touched(){isExample=false;persist();renderResult();}
+
+function setModeUI(){
+  const rubMode=state.mode==='rub';
+  $('modeCur').setAttribute('aria-pressed',!rubMode);$('modeRub').setAttribute('aria-pressed',rubMode);
+  $('amountLbl').hidden=rubMode;$('budgetLbl').hidden=!rubMode;
+}
+function setMode(m){
+  if(state.mode===m) return;
+  // carry the current best result over so the other field starts from a sensible number
+  const b=lastRows[0];
+  if(m==='rub'&&b&&!num(state.budget)) state.budget=Math.round(b.total);
+  if(m==='cur'&&b&&!num(state.amount)) state.amount=Math.round(b.A*100)/100;
+  state.mode=m; picked=null;
+  $('amount').value=state.amount??'';$('budget').value=state.budget??'';
+  setModeUI();touched();
+}
+$('modeCur').addEventListener('click',()=>setMode('cur'));
+$('modeRub').addEventListener('click',()=>setMode('rub'));
+['amount','budget','rate'].forEach(id=>$(id).addEventListener('input',e=>{state[id]=e.target.value;touched();}));
+// manual base rates are one shared store per currency (conv.rates), used by both the calculator and the converter
+['ex','inv','xe'].forEach(k=>$(k).addEventListener('input',e=>{state[k]=e.target.value;setManual(k,state.cur,e.target.value);touched();}));
+$('cb').addEventListener('input',e=>{if(e.target.readOnly)return;state.cb=e.target.value;touched();});
+$('cur').addEventListener('change',e=>{state.cur=e.target.value;
+  pullManual();
+  applyCbr();renderOffers();touched();});
+$('useTime').addEventListener('change',e=>{state.useTime=e.target.checked;$('rate').disabled=!state.useTime;touched();});
+
+$('offers').addEventListener('input',e=>{
+  const card=e.target.closest('.offer'),k=e.target.dataset.k;if(!card||!k)return;
+  const o=state.offers[+card.dataset.i];
+  o[k]=e.target.type==='checkbox'?e.target.checked:e.target.value;
+  if(k==='base')card.querySelector('[data-own]').hidden=o.base!=='own';
+  touched();
+});
+$('offers').addEventListener('click',e=>{
+  const del=e.target.closest('[data-del]');
+  if(del){state.offers.splice(+del.dataset.del,1);picked=null;renderOffers();touched();return;}
+  if(e.target.closest('#add')){
+    state.offers.push({name:'Предложение '+(state.offers.length+1),base:'ex',own:0,markup:1,feePct:0,vat:false,fixCur:0,fixRub:0,days:3});
+    renderOffers();touched();
+    const el=$('o'+(state.offers.length-1)+'-name');
+    if(el){el.closest('.offer').scrollIntoView({block:'nearest',inline:'start'});el.focus({preventScroll:true});el.select();}
+  }
+});
+$('opts').addEventListener('click',e=>{
+  const b=e.target.closest('[data-pick]');if(!b)return;picked=+b.dataset.pick;renderResult();
+});
+$('reset').addEventListener('click',()=>{
+  state={mode:state.mode||'cur',amount:'',budget:'',cur:state.cur,cb:'',cbAuto:true,ex:'',inv:'',xe:'',useTime:false,rate:state.rate||16,offers:[
+    {name:'Предложение 1',base:'cb',own:0,markup:0,feePct:0,vat:false,fixCur:0,fixRub:0,days:3},
+    {name:'Предложение 2',base:'ex',own:0,markup:0,feePct:0,vat:false,fixCur:0,fixRub:0,days:3}]};
+  pullManual();
+  picked=null;syncTop();renderOffers();touched();
+});
+$('copy').addEventListener('click',()=>{
+  const t=summaryText(),toast=$('toast'),fb=$('copyFallback');
+  const ok=()=>{toast.textContent='Скопировано';toast.hidden=false;fb.hidden=true;setTimeout(()=>toast.hidden=true,1800)};
+  const fail=()=>{fb.value=t;fb.hidden=false;fb.focus();fb.select();toast.textContent='Выделите текст и скопируйте';toast.hidden=false};
+  try{navigator.clipboard.writeText(t).then(ok,fail)}catch(e){fail()}
+});
+
+/* ---------- History ---------- */
+const HKEY='plata-history-v1';
+let hist=[], histRef=null, confirmDel=null, histMode='local';
+const fmtWhen=iso=>{try{return new Date(iso).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}catch(e){return iso}};
+function localHist(){try{return JSON.parse(localStorage.getItem(HKEY))||[]}catch(e){return []}}
+function saveLocalHist(){try{localStorage.setItem(HKEY,JSON.stringify(hist))}catch(e){}}
+
+async function connectHistory(){
+  // история хранится в этом браузере; сохранение в личном кабинете добавим вместе со входом по телефону
+  histRef=null;histMode='local';hist=localHist();renderHist();
+}
+
+function snapshotEntry(){
+  const A=num(state.amount), best=lastRows[0], worst=lastRows[lastRows.length-1];
+  return {
+    savedAt:new Date().toISOString(),
+    note:$('note').value.trim(),
+    mode:state.mode||'cur', budget:num(state.budget),
+    amount:state.mode==='rub'?(best?Math.round(best.A*100)/100:0):A, cur:state.cur,
+    cb:num(state.cb), cbDate:(cbr&&cbr.rates&&cbr.rates[state.cur])?cbr.date:null,
+    bases:{ex:num(state.ex),inv:num(state.inv),xe:num(state.xe)},
+    useTime:!!state.useTime, rate:num(state.rate),
+    best:best?{name:best.o.name,total:Math.round(best.total),A:Math.round(best.A*100)/100,eff:+best.eff.toFixed(4),days:num(best.o.days)}:null,
+    saving:lastRows.length<2?0:state.mode==='rub'?Math.round((best.A-worst.A)*100)/100:Math.round(worst.total-best.total),
+    rows:lastRows.map(r=>({name:r.o.name,total:Math.round(r.total),A:Math.round(r.A*100)/100,eff:+r.eff.toFixed(4),days:num(r.o.days),over:Math.round(r.over)})),
+    input:JSON.parse(JSON.stringify(state))
+  };
+}
+async function saveCalc(){
+  const toast=$('toast');
+  if(!lastRows.length){toast.textContent='Нечего сохранять: заполните сумму и предложения';toast.hidden=false;return;}
+  const e=snapshotEntry();
+  const btn=$('saveBtn');btn.disabled=true;
+  try{
+    if(histRef){await histRef.add(e);}
+    else{e.id='l'+Date.now();hist.unshift(e);saveLocalHist();renderHist();}
+    $('note').value='';
+    toast.textContent=`Сохранено в историю · ${fmtWhen(e.savedAt)}`;toast.hidden=false;setTimeout(()=>toast.hidden=true,2500);
+  }catch(err){
+    if(err&&err.code==='quota_exceeded'){toast.textContent='История заполнена: удалите старые расчёты';toast.hidden=false;}
+    else{
+      // no write access to the account store: fall back to this browser
+      histRef=null;histMode='local';hist=localHist();
+      e.id='l'+Date.now();hist.unshift(e);saveLocalHist();renderHist();$('note').value='';
+      toast.textContent=`Сохранено в историю этого браузера · ${fmtWhen(e.savedAt)}`;toast.hidden=false;
+    }
+  }finally{btn.disabled=false;}
+}
+async function deleteEntry(id){
+  if(histRef){try{await histRef.doc(id).delete();}catch(e){}}
+  else{hist=hist.filter(h=>h.id!==id);saveLocalHist();renderHist();}
+}
+function openEntry(id){
+  const h=hist.find(x=>x.id===id); if(!h||!h.input) return;
+  state=JSON.parse(JSON.stringify(h.input)); state.cbAuto=true; isExample=false; picked=null;
+  ['ex','inv','xe'].forEach(k=>setManual(k,state.cur,state[k]??''));
+  syncTop();renderOffers();touched();showTab('calc');
+  if(state.cb!==h.cb){const t=$('toast');t.textContent=`Курс ЦБ обновлён до текущего: в сохранённом расчёте было ${r4(h.cb)}`;t.hidden=false;}
+}
+const hc=(n,c)=>new Intl.NumberFormat('ru-RU',{maximumFractionDigits:2}).format(n||0)+' '+esc(c);
+function renderHist(){
+  $('histCount').textContent=hist.length;
+  $('histWhere').textContent=histMode==='cloud'?'Сохраняется в вашем аккаунте, видна только вам':'Сохраняется в этом браузере';
+  if(!hist.length){
+    $('hist').innerHTML='<div class="empty"><b>Здесь пока пусто</b><span>Сделайте расчёт и нажмите «Сохранить расчёт». Он появится здесь с датой и временем.</span></div>';return;
+  }
+  $('hist').innerHTML=hist.map(h=>{
+    const b=h.best||{};
+    const bases=[['Биржа / рынок',h.bases&&h.bases.ex],['Investing',h.bases&&h.bases.inv],['XE',h.bases&&h.bases.xe]].filter(x=>x[1]).map(x=>`${x[0]} ${r4(x[1])}`).join(' · ');
+    return `<article class="h-item">
+      <div class="h-top">
+        <span class="h-title num">${h.mode==='rub'?rub(h.budget)+' → '+esc(h.cur):new Intl.NumberFormat('ru-RU').format(h.amount)+' '+esc(h.cur)}</span>
+        <time class="h-when num" datetime="${esc(h.savedAt)}">${fmtWhen(h.savedAt)}</time>
+      </div>
+      ${h.note?`<div class="h-note">${esc(h.note)}</div>`:''}
+      <div class="h-best">
+        <span>Лучший: <span class="acc">${esc(b.name||'—')}</span></span>
+        ${h.mode==='rub'
+          ?`<span>Получит <b class="num">${hc(b.A,h.cur)}</b></span>`
+          :`<span>Итого <b class="num">${rub(b.total||0)}</b></span>`}
+        <span class="num">${r4(b.eff||0)} ₽/${esc(h.cur)}</span>
+        ${h.saving?(h.mode==='rub'?`<span>Больше худшего на <b class="num">${hc(h.saving,h.cur)}</b></span>`:`<span>Экономия <b class="num">${rub(h.saving)}</b></span>`):''}
+      </div>
+      <div class="small num">ЦБ ${r4(h.cb)}${h.cbDate?' на '+fmtDate(h.cbDate):''}${bases?' · '+bases:''}${h.useTime?` · деньги в пути ${r2(h.rate)} %`:''}</div>
+      <details><summary>Все варианты (${(h.rows||[]).length})</summary>
+        <div class="tblwrap"><table class="h-rows"><thead><tr><th>Агент / банк</th><th>Трансфер</th><th>₽ за 1 ${esc(h.cur)}</th><th>${h.mode==='rub'?'Получит':'Итого'}</th></tr></thead><tbody>
+        ${(h.rows||[]).map(r=>`<tr><td>${esc(r.name)}</td><td>${dayTxt(r.days)}</td><td>${r4(r.eff)}</td><td>${h.mode==='rub'?hc(r.A,h.cur):rub(r.total)}</td></tr>`).join('')}
+        </tbody></table></div>
+      </details>
+      <div class="h-actions">
+        <button class="btn sm" type="button" data-open="${esc(h.id)}">Открыть в расчёте</button>
+        <button class="btn sm${confirmDel===h.id?' danger':''}" type="button" data-hdel="${esc(h.id)}">${confirmDel===h.id?'Точно удалить?':'Удалить'}</button>
+      </div>
+    </article>`}).join('');
+}
+$('hist').addEventListener('click',e=>{
+  const o=e.target.closest('[data-open]'); if(o){openEntry(o.dataset.open);return;}
+  const d=e.target.closest('[data-hdel]'); if(!d) return;
+  const id=d.dataset.hdel;
+  if(confirmDel===id){confirmDel=null;deleteEntry(id);}
+  else{confirmDel=id;renderHist();setTimeout(()=>{if(confirmDel===id){confirmDel=null;renderHist();}},4000);}
+});
+$('saveBtn').addEventListener('click',saveCalc);
+
+function showTab(t){
+  [['calc','Calc'],['offers','Offers'],['cmp','Cmp'],['conv','Conv'],['hist','Hist'],['fb','Fb']].forEach(([k,n])=>{
+    $('view'+n).hidden=k!==t; $('tab'+n).setAttribute('aria-selected',k===t);
+  });
+  if(t==='conv') renderConv();
+  if(t==='offers') updCar();
+}
+$('tabCalc').addEventListener('click',()=>showTab('calc'));
+$('tabConv').addEventListener('click',()=>showTab('conv'));
+$('tabOffers').addEventListener('click',()=>showTab('offers'));
+$('tabCmp').addEventListener('click',()=>showTab('cmp'));
+$('tabFb').addEventListener('click',()=>showTab('fb'));
+
+/* ---------- Feedback ---------- */
+const FKEY='plata-feedback-v1';
+const FQ=[['rating','Польза, из 5'],['match','Совпал с фактом'],['cheaper','Нашёлся дешевле'],['freq','Как часто'],['price','Готов платить']];
+let fbRef=null, fbDb=null, fbUser=null;
+function fbRead(){
+  const f=$('fbForm'), o={};
+  FQ.forEach(([k])=>{const c=f.querySelector(`input[name="${k}"]:checked`);o[k]=c?c.value:'';});
+  o.unclear=$('fbUnclear').value.trim();o.missing=$('fbMissing').value.trim();o.contact=$('fbContact').value.trim();
+  return o;
+}
+function fbFill(o){
+  if(!o) return;
+  FQ.forEach(([k])=>{const c=$('fbForm').querySelector(`input[name="${k}"][value="${CSS.escape(o[k]||'')}"]`);if(c)c.checked=true;});
+  $('fbUnclear').value=o.unclear||'';$('fbMissing').value=o.missing||'';$('fbContact').value=o.contact||'';
+}
+function fbText(o){
+  return ['Отзыв о plata+',...FQ.map(([k,t])=>`${t}: ${o[k]||'—'}`),
+    `Непонятно/неудобно: ${o.unclear||'—'}`,`Не хватает: ${o.missing||'—'}`,o.contact?`Контакт: ${o.contact}`:''].filter(Boolean).join('\n');
+}
+function fbLocalSave(o){try{localStorage.setItem(FKEY,JSON.stringify(o))}catch(e){}}
+function fbOffline(){
+  // no way to deliver from this view (signed out or outside the organization): offer copying
+  fbRef=null;$('fbSend').hidden=true;$('fbCopy').hidden=false;
+  $('fbNote').hidden=false;
+  $('fbNote').textContent='Заполните форму, нажмите «Скопировать отзыв» и пришлите текст автору приложения. Удобнее всего — в Telegram.';
+}
+async function connectFeedback(){
+  try{fbFill(JSON.parse(localStorage.getItem(FKEY)));}catch(e){}
+  fbOffline();
+}
+$('fbForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const o=fbRead(), t=$('fbToast');
+  if(!o.rating&&!o.unclear&&!o.missing){t.textContent='Поставьте оценку или напишите пару слов';t.hidden=false;return;}
+  fbLocalSave(o);
+  if(!fbRef){fbOffline();return;}
+  const b=$('fbSend');b.disabled=true;
+  try{
+    o.at=new Date().toISOString();o.uid=await fbUser.id();
+    await fbRef.set(o);
+    t.textContent='Спасибо! Отзыв отправлен';t.hidden=false;b.textContent='Обновить отзыв';
+    $('fbNote').hidden=false;$('fbNote').textContent=`Ваш отзыв получен ${fmtWhen(o.at)}. Можно поправить ответы и отправить снова.`;
+  }catch(err){fbOffline();t.textContent='Не удалось отправить. Скопируйте отзыв и пришлите автору.';t.hidden=false;}
+  finally{b.disabled=false;}
+});
+$('fbCopy').addEventListener('click',()=>{
+  const o=fbRead();fbLocalSave(o);const t=$('fbToast');
+  try{navigator.clipboard.writeText(fbText(o)).then(()=>{t.textContent='Скопировано';t.hidden=false;},()=>{t.textContent='Не удалось скопировать автоматически';t.hidden=false;});}
+  catch(e){t.textContent='Не удалось скопировать автоматически';t.hidden=false;}
+});
+function connectFbAdmin(db,user){
+  $('fbAdmin').hidden=false;
+  db.collection('feedback').orderBy('at','desc').limit(500).onSnapshot(async q=>{
+    const rows=q.docs.map(d=>d.data());
+    $('fbCount').hidden=!rows.length;$('fbCount').textContent=rows.length;
+    let names={};try{names=await user.profiles(rows.map(r=>r.uid).filter(Boolean))||{};}catch(e){}
+    renderFbAdmin(rows,names);
+  },()=>{});
+}
+function renderFbAdmin(rows,names){
+  if(!rows.length){$('fbStats').innerHTML='';$('fbList').innerHTML='<div class="empty"><b>Отзывов пока нет</b><span>Поделитесь калькулятором с тестировщиками, их ответы появятся здесь.</span></div>';return;}
+  const rated=rows.map(r=>+r.rating).filter(Boolean);
+  const avg=rated.length?rated.reduce((a,b)=>a+b,0)/rated.length:0;
+  const dist=k=>{const m={};rows.forEach(r=>{if(r[k])m[r[k]]=(m[r[k]]||0)+1;});return Object.entries(m).sort((a,b)=>b[1]-a[1]).map(([v,n])=>`<span>${esc(v)} — <span class="num">${n}</span></span>`).join('')||'<span>—</span>';};
+  $('fbStats').innerHTML=`<div class="fb-stat">Отзывов<b class="num">${rows.length}</b></div>
+    <div class="fb-stat">Средняя польза<b class="num">${avg?r2(avg):'—'}</b>из 5</div>
+    <div class="fb-stat">Совпал с фактом<div class="bars">${dist('match')}</div></div>
+    <div class="fb-stat">Готовы платить<div class="bars">${dist('price')}</div></div>`;
+  $('fbList').innerHTML=rows.map(r=>{
+    const p=r.uid&&names[r.uid];
+    const who=(p&&p.name)||r.contact||'Без имени';
+    return `<article class="fb-item">
+      <div class="h-top"><span class="who">${esc(who)}${p&&p.name&&r.contact?` · ${esc(r.contact)}`:''}</span><time class="h-when num">${fmtWhen(r.at)}</time></div>
+      <dl>${FQ.map(([k,t])=>`<dt>${t}</dt><dd>${esc(r[k]||'—')}</dd>`).join('')}
+        ${r.unclear?`<dt>Непонятно</dt><dd>${esc(r.unclear)}</dd>`:''}
+        ${r.missing?`<dt>Не хватает</dt><dd>${esc(r.missing)}</dd>`:''}</dl>
+    </article>`}).join('');
+}
+document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g)showTab(g.dataset.go);});
+
+/* ---------- Offers carousel ---------- */
+function carStep(){const c=$('offers').firstElementChild;return c?c.getBoundingClientRect().width+16:300;}
+function updCar(){
+  const el=$('offers'), n=state.offers.length, st=carStep();
+  const i=Math.min(n,Math.round(el.scrollLeft/st)+1);
+  $('carPos').textContent=n?`${Math.min(i,n)} из ${n}`:'';
+  $('carPrev').disabled=el.scrollLeft<=4;
+  $('carNext').disabled=el.scrollLeft+el.clientWidth>=el.scrollWidth-4;
+  $('offCount').textContent=n;
+}
+$('carPrev').addEventListener('click',()=>$('offers').scrollBy({left:-carStep()}));
+$('carNext').addEventListener('click',()=>$('offers').scrollBy({left:carStep()}));
+$('offers').addEventListener('scroll',()=>requestAnimationFrame(updCar),{passive:true});
+$('offers').addEventListener('keydown',e=>{
+  if(e.target!==$('offers'))return;
+  if(e.key==='ArrowRight'){e.preventDefault();$('offers').scrollBy({left:carStep()});}
+  if(e.key==='ArrowLeft'){e.preventDefault();$('offers').scrollBy({left:-carStep()});}
+});
+window.addEventListener('resize',()=>updCar());
+$('tabHist').addEventListener('click',()=>showTab('hist'));
+
+/* ---------- Converter ---------- */
+const CKEY='plata-conv-v1';
+const SRC=[['cb','ЦБ РФ'],['ex','Биржа / рынок'],['inv','Investing'],['xe','XE']];
+let conv;
+function loadConv(){
+  try{const c=JSON.parse(localStorage.getItem(CKEY));if(c&&c.rates)return c;}catch(e){}
+  return {amount:1000,from:'USD',to:'RUB',rates:{ex:{},inv:{},xe:{}}};
+}
+function saveConv(){try{localStorage.setItem(CKEY,JSON.stringify(conv))}catch(e){}}
+function setManual(k,c,v){if(!conv.rates[k])conv.rates[k]={};conv.rates[k][c]=v;saveConv();}
+function pullManual(){
+  ['ex','inv','xe'].forEach(k=>{state[k]=(conv.rates[k]||{})[state.cur]??'';const el=$(k);if(el)el.value=state[k];});
+}
+// rubles per 1 unit of currency c by source k; RUB is always 1
+function srcRate(k,c){
+  if(c==='RUB') return 1;
+  if(k==='cb') return (cbr&&cbr.rates&&cbr.rates[c])||(c===state.cur?num(state.cb):0);
+  return num(conv.rates[k][c]);
+}
+const fmtN=(n,c)=>new Intl.NumberFormat('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n)+' '+(c==='RUB'?'₽':c);
+const fmtR=n=>new Intl.NumberFormat('ru-RU',{maximumFractionDigits:n<1?6:4,minimumFractionDigits:n<1?4:4}).format(n);
+function convRows(){
+  const A=num(conv.amount), f=conv.from, t=conv.to;
+  return SRC.map(([k,name])=>{
+    const rf=srcRate(k,f), rt=srcRate(k,t);
+    const ok=rf>0&&rt>0;
+    return {k,name,ok,rate:ok?rf/rt:0,out:ok?A*rf/rt:0};
+  });
+}
+function renderConvRates(){
+  const curs=[...new Set([conv.from,conv.to])].filter(c=>c!=='RUB');
+  if(!curs.length){$('cvRates').innerHTML='<span class="rates-title">Выберите хотя бы одну валюту, кроме рубля</span>';return;}
+  $('cvRates').innerHTML=curs.map(c=>`
+    <div class="rates-title">Курсы для ${c}, ₽ за 1 ${c}</div>
+    <div class="fields">
+      <label for="cv-cb-${c}">ЦБ РФ<input id="cv-cb-${c}" type="number" readonly value="${srcRate('cb',c)||''}">
+        <span class="src${cbr&&cbr.rates&&cbr.rates[c]?' auto':''}">${cbr&&cbr.rates&&cbr.rates[c]?'Авто · ЦБ на '+fmtDate(cbr.date):'Нет данных ЦБ'}</span></label>
+      ${SRC.slice(1).map(([k,n])=>`<label for="cv-${k}-${c}">${n}<input id="cv-${k}-${c}" data-src="${k}" data-cur="${c}" type="number" min="0" step="0.0001" inputmode="decimal" value="${conv.rates[k][c]??''}"><span class="src">Ручной ввод</span></label>`).join('')}
+    </div>`).join('');
+}
+function renderConvOut(){
+  const rows=convRows(), base=rows[0], f=conv.from, t=conv.to;
+  $('cvOut').innerHTML=rows.map(r=>{
+    if(!r.ok) return `<div class="cv-card"><div class="cv-src">${r.name}</div><div class="cv-empty">Введите курс ниже, чтобы посчитать</div></div>`;
+    let diff='';
+    if(r.k!=='cb'&&base.ok){
+      const d=r.out-base.out, pct=base.out?d/base.out*100:0;
+      diff=Math.abs(pct)<0.00005?'<div class="cv-diff">Как у ЦБ</div>':
+        `<div class="cv-diff ${d>0?'up':'down'} num">${d>0?'+':'−'}${fmtN(Math.abs(d),t)} (${d>0?'+':'−'}${r2(Math.abs(pct))} %) к ЦБ</div>`;
+    }
+    return `<div class="cv-card${r.k==='cb'?' base':''}">
+      <div class="cv-src">${r.name}${r.k==='cb'?'<span class="pill">база для сравнения</span>':''}</div>
+      <div class="cv-val num">${fmtN(r.out,t)}</div>
+      <div class="cv-rate num">1 ${f} = ${fmtR(r.rate)} ${t==='RUB'?'₽':t}</div>
+      ${diff}
+    </div>`}).join('');
+}
+function renderConv(){
+  if(!conv) return;
+  $('cvAmt').value=conv.amount;$('cvFrom').value=conv.from;$('cvTo').value=conv.to;
+  const a=document.activeElement, keep=a&&a.dataset&&a.dataset.src?a.id:null;
+  if(!keep) renderConvRates();
+  renderConvOut();
+}
+$('cvAmt').addEventListener('input',e=>{conv.amount=e.target.value;saveConv();renderConvOut();});
+$('cvFrom').addEventListener('change',e=>{conv.from=e.target.value;saveConv();renderConvRates();renderConvOut();});
+$('cvTo').addEventListener('change',e=>{conv.to=e.target.value;saveConv();renderConvRates();renderConvOut();});
+$('cvSwap').addEventListener('click',()=>{[conv.from,conv.to]=[conv.to,conv.from];saveConv();renderConv();});
+$('cvRates').addEventListener('input',e=>{
+  const k=e.target.dataset.src,c=e.target.dataset.cur;if(!k)return;
+  setManual(k,c,e.target.value);
+  if(c===state.cur){state[k]=e.target.value;$(k).value=e.target.value;touched();}
+  renderConvOut();
+});
+$('cvCopy').addEventListener('click',()=>{
+  const A=num(conv.amount);
+  const lines=[`Plata+ · конвертация ${fmtN(A,conv.from)} → ${conv.to==='RUB'?'₽':conv.to}`];
+  convRows().filter(r=>r.ok).forEach(r=>lines.push(`${r.name}: ${fmtN(r.out,conv.to)} (1 ${conv.from} = ${fmtR(r.rate)})`));
+  if(cbr) lines.push(`Курс ЦБ на ${fmtDate(cbr.date)}`);
+  const t=lines.join('\n'),toast=$('cvToast');
+  const ok=()=>{toast.textContent='Скопировано';toast.hidden=false;setTimeout(()=>toast.hidden=true,1800)};
+  const fail=()=>{toast.textContent='Не удалось скопировать автоматически';toast.hidden=false};
+  try{navigator.clipboard.writeText(t).then(ok,fail)}catch(e){fail()}
+});
+conv=loadConv();
+['ex','inv','xe'].forEach(k=>{if(!conv.rates[k])conv.rates[k]={};});
+
+// official CBR rates embedded in the page: available to every viewer, signed in or not
+try{const d=JSON.parse(document.getElementById('cbrData').textContent);if(d&&d.rates)cbr=d;}catch(e){}
+state=load();
+['ex','inv','xe'].forEach(k=>{if(conv.rates[k][state.cur]===undefined&&state[k]!==''&&state[k]!==undefined)conv.rates[k][state.cur]=state[k];});
+saveConv();pullManual();
+syncTop();renderOffers();renderResult();connectRates();
+hist=localHist();renderHist();connectHistory();
+renderConv();
+if(location.hash==='#history')showTab('hist');
+if(location.hash==='#convert')showTab('conv');
+if(location.hash==='#offers')showTab('offers');
+if(location.hash==='#compare')showTab('cmp');
+if(location.hash==='#feedback')showTab('fb');
+connectFeedback();
+updCar();
+})();
+</script>
+
+</body></html>
